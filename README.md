@@ -92,7 +92,7 @@ func main() {
 			log.Fatalf("LoadGlyph: %v", err)
 		}
 
-        // Apply Harfbuzz offsets
+		// Apply Harfbuzz offsets
 		originY += -float32(pos[i].YOffset)
 		originX += float32(pos[i].XOffset)
 
