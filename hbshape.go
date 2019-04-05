@@ -14,6 +14,7 @@ package hbshape
 import "C"
 import (
 	"fmt"
+	"log"
 	"sync"
 	"unsafe"
 )
@@ -46,22 +47,43 @@ func newFace(filename string) (C.FT_Face, error) {
 	return face, nil
 }
 
+func newMemoryFace(fontBytes []byte) (C.FT_Face, error) {
+	mux.Lock()
+	defer mux.Unlock()
+
+	var face C.FT_Face
+
+	fb := C.CBytes(fontBytes)
+	//TODO: This should be freed, but where? (not here)
+	//defer C.free(fb)
+
+	if rc, err := C.FT_New_Memory_Face(ftLib, (*_Ctype_uchar)(fb), C.long(len(fontBytes)), 0, &face); rc != 0 {
+		return nil, fmt.Errorf("FT_New_Memory_Face(): %v (%d).", err, rc)
+	}
+
+	return face, nil
+}
+
 type shaper struct {
 	face C.FT_Face
 	hbf  *C.hb_font_t
 	hbb  *C.hb_buffer_t
 }
 
-func NewShaper(fontPath string, fontSize int) (*shaper, error) {
+//func NewShaper(fontPath string, fontSize int) (*shaper, error) {
+func NewShaper(fontBytes []byte, fontSize int) (*shaper, error) {
 
 	var sh shaper
 
-	face, err := newFace(fontPath)
+	face, err := newMemoryFace(fontBytes)
+	//face, err := newFace(fontPath)
 	if err != nil {
 		return nil, err
 	}
 
-	C.FT_Set_Char_Size(face, C.long(fontSize), C.long(fontSize), 0, 0)
+	log.Printf("ZZZ fontsize: %v", fontSize)
+
+	C.FT_Set_Char_Size(face, C.long(fontSize*64), C.long(fontSize*64), 0, 0)
 
 	sh.hbf = C.hb_ft_font_create(face, nil)
 
@@ -88,7 +110,12 @@ func (sh *shaper) ShapeText(text string) ([]*GlyphPos, error) {
 
 	for i := 0; i < l; i++ {
 		p := C.hbshape_glyph_pos_at(pos, C.int(i))
-		result[i] = &GlyphPos{float64(p.x_advance), float64(p.y_advance), float64(p.x_offset), float64(p.y_offset)}
+		result[i] = &GlyphPos{
+			float64(p.x_advance) / 64,
+			float64(p.y_advance) / 64,
+			float64(p.x_offset) / 64,
+			float64(p.y_offset) / 64,
+		}
 	}
 
 	return result, nil
