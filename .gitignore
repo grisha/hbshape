@@ -1,0 +1,6 @@
+blocks
+bindata.go
+node_modules
+npm-debug.log
+assets_gen
+dist
