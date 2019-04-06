@@ -85,7 +85,7 @@ func main() {
 			log.Fatalf("GlyphIndex: %v", err)
 		}
 		if x == 0 {
-			log.Fatalf("GlyphIndex: no glyph index found for the rune 'Ġ'")
+			log.Fatalf("GlyphIndex: no glyph index found for the rune")
 		}
 		segments, err := f.LoadGlyph(&b, x, fixed.I(ppem), nil)
 		if err != nil {
